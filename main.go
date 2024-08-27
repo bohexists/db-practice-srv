@@ -111,9 +111,40 @@ func deleteUser(db *sql.DB, id int) error {
 }
 
 func insertUser(db *sql.DB, name string, password string, email string) (Users, error) {
-	err := createUser(db, name, password, email)
+	tx, err := db.Begin()
 	if err != nil {
 		return Users{}, err
 	}
-	return getUserByName(db, name)
+
+	defer func() {
+		if err != nil {
+			errRollback := tx.Rollback()
+			if errRollback != nil {
+				log.Fatal(errRollback)
+			}
+		} else {
+			errCommit := tx.Commit()
+			if errCommit != nil {
+				log.Fatal(errCommit)
+			}
+		}
+	}()
+
+	_, err = tx.Exec("INSERT INTO users (name, password, email) VALUES ($1, $2, $3)", name, password, email)
+	if err != nil {
+		return Users{}, err
+	}
+
+	u, err := getUserByName(tx, name)
+	if err != nil {
+		return Users{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return Users{}, err
+	}
+
+	return u, nil
+
 }
