@@ -33,7 +33,10 @@ func main() {
 
 	fmt.Println("Connected!")
 
-	users, err := getUsers(db)
+	users, err := insertUser(db, "test", "test", "test")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println(users)
 
@@ -89,4 +92,28 @@ func createUser(db *sql.DB, name string, password string, email string) error {
 		return err
 	}
 	return nil
+}
+
+func updateUser(db *sql.DB, id int, name string, password string, email string) error {
+	_, err := db.Exec("UPDATE users SET name = $1, password = $2, email = $3 WHERE id = $4", name, password, email, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func deleteUser(db *sql.DB, id int) error {
+	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func insertUser(db *sql.DB, name string, password string, email string) (Users, error) {
+	err := createUser(db, name, password, email)
+	if err != nil {
+		return Users{}, err
+	}
+	return getUserByName(db, name)
 }
