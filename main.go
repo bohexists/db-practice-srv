@@ -72,3 +72,21 @@ func getUserByID(db *sql.DB, id int) (Users, error) {
 	}
 	return u, err
 }
+
+func getUserByName(db *sql.DB, name string) (Users, error) {
+	var u Users
+	err := db.QueryRow("SELECT * FROM users WHERE name = $1", name).
+		Scan(&u.ID, &u.Name, &u.Password, &u.Email, &u.RegisteredAT)
+	if err != nil {
+		return Users{}, err
+	}
+	return u, err
+}
+
+func createUser(db *sql.DB, name string, password string, email string) error {
+	_, err := db.Exec("INSERT INTO users (name, password, email) VALUES ($1, $2, $3)", name, password, email)
+	if err != nil {
+		return err
+	}
+	return nil
+}
